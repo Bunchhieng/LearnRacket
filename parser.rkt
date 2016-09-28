@@ -9,6 +9,25 @@
   [plusC (l : ArithC) (r : ArithC)]
   [multC (l : ArithC) (r : ArithC)])
 
+;; A new data type which allow us to add bminusS
+(define-type ArithS
+  [numS (n : number)]
+  [plusS (l : ArithS) (r : ArithS)]
+  [bminusS (l : ArithS) (r : ArithS)]
+  [multS (l : ArithS) (r : ArithS)]
+  [uminusS (e : ArithS)])
+
+;; desugar function translates ArithS values into ArithC ones
+(define (desugar [as : ArithS]) : ArithC
+  (type-case ArithS as
+    [numS (n) (numC n)]
+    [plusS (l r) (plusC (desugar l) (desugar r))]
+    [multS (l r) (multC (desugar l) (desugar r))]
+    ;; Because a - b = a + (-1) x b
+    [bminusS (l r) (plusC (desugar l) (multC (numC -1) (desugar r)))]
+    ;; -b = -1 x b
+    [uminusS (e) (desugar (multS (numS -1) e))]))
+
 ;; Convert s-exp to appropriate data type of list
 (define (parse [s : s-expression]) : ArithC
   (cond
@@ -43,3 +62,4 @@
 
 ;; output: 7
 (interp (parse '(+ (* 1 2) (+ 2 3))))
+(test (interp (parse '(+ (* 1 2) (+ 2 3)))) 7)
